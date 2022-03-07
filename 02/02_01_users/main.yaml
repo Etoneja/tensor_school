@@ -1,0 +1,31 @@
+---
+- name: Create system users
+  hosts: nodes
+  gather_facts: true
+  become: true
+
+  vars:
+    users_group: tensor
+    users_comment: Ansible-generated user
+
+  vars_files:
+    - users.yaml
+
+  tasks:
+    - name: Ensure "{{ users_group }}" group exists
+      group:
+        name: "{{ users_group }}"
+        state: present
+
+    - name: Create users
+      ansible.builtin.user:
+        name: "{{ user.name }}"
+        password: "{{ user.password | password_hash('sha512') }}"
+        group: "{{ users_group }}"
+        shell: /bin/bash
+        comment: "{{ users_comment }}"
+      loop: "{{ users }}"
+      loop_control:
+        loop_var: user
+        pause: 5
+      no_log: true
