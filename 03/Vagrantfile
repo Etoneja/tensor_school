@@ -1,0 +1,64 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "bento/centos-7.7"
+  
+# base provision script
+$base_provision_script = <<-SCRIPT
+sudo -i
+useradd -m -s /bin/bash ansible
+echo 'ansible  ALL=(ALL:ALL) NOPASSWD:ALL' >> /etc/sudoers
+mkdir -p /home/ansible/.ssh
+pushd /home/ansible/.ssh
+cp /tensor_data/id_rsa* .
+cat id_rsa.pub >> authorized_keys
+popd
+chown -R ansible:ansible /home/ansible
+chmod -R 700 /home/ansible
+echo "192.168.10.10	controller controller" >> /etc/hosts
+echo "192.168.10.20	compute	compute" >> /etc/hosts     
+SCRIPT
+
+# controller provision script
+$controller_provision_script = <<-SCRIPT
+sudo -i
+yum install -y python3 git vim libselinux-python3
+sudo -i -u ansible bash <<-EOF
+cd ~
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install ansible==2.9.14
+EOF
+mkdir /etc/ansible
+cat << EOF > /etc/ansible/hosts
+[nodes]
+node1 = ansible_host=compute
+EOF
+SCRIPT
+  
+  # controller
+  config.vm.define "controller" do |controller|
+    controller.vm.hostname = "controller"
+    controller.vm.network "private_network", ip: "192.168.10.10"
+    controller.vm.provision "shell", inline: $base_provision_script
+    controller.vm.provision "shell", inline: $controller_provision_script
+  end
+  
+  # compute
+  config.vm.define "compute" do |compute|
+    compute.vm.hostname = "compute"
+    compute.vm.network "private_network", ip: "192.168.10.20"
+    compute.vm.network "forwarded_port", guest: 80, host: 9080, protocol: "tcp"
+    compute.vm.network "forwarded_port", guest: 443, host: 9443, protocol: "tcp"
+    compute.vm.network "forwarded_port", guest: 8888, host: 9888, protocol: "tcp"
+    compute.vm.network "forwarded_port", guest: 9999, host: 9999, protocol: "tcp"
+    compute.vm.provision "shell", inline: $base_provision_script
+  end
+  
+  # synced folder
+  config.vm.synced_folder "data/", "/tensor_data", mount_options: ["dmode=777", "fmode=666"]
+   
+end

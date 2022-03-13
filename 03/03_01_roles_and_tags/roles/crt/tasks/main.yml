@@ -1,0 +1,66 @@
+---
+- name: PIP | Check required packages presented 
+  pip:
+    state: latest
+    name:
+      - selinux
+      - pyOpenSSL
+    virtualenv: "{{ controller_venv_path }}"
+
+- name: SSL | Ensure controller crt dir exists
+  file:
+    path: "{{ crt_controller_dir }}"
+    state: directory
+
+- name: SSL | Check cert and key exists
+  stat:
+    path: "{{ crt_controller_dir }}/{{ item }}"
+  register: check_cert_files_exists
+  loop:
+    - "{{ privatekey_filename }}"
+    - "{{ crt_filename }}"
+
+- name: SSL | Check cert and key are missing and need generate
+  set_fact:
+    generate_crt: true
+  with_items: "{{ check_cert_files_exists.results }}"
+  when: item.stat.exists == false
+
+- name: SSL | Check cert expiration
+  openssl_certificate:
+    path: "{{ crt_controller_dir }}/{{ crt_filename }}"
+    provider: assertonly
+    has_expired: False
+  register: check_crt_validity
+  when: generate_crt == false
+
+- name: SSL | Check cert expired and need generate
+  set_fact:
+    generate_crt: true
+  when: generate_crt == false and check_crt_validity.failed
+
+- name: SSL | Generate crt pair
+  block:
+    - name: SSL | Generate privatekey
+      openssl_privatekey:
+        path: "{{ crt_controller_dir }}/{{ privatekey_filename }}"
+        owner: ansible
+        mode: 0600
+
+    - name: SSL | Generate csr
+      openssl_csr:
+        path: "{{ crt_controller_dir }}/{{ csr_filename }}"
+        privatekey_path: "{{ crt_controller_dir }}/{{ privatekey_filename }}"
+        common_name: "{{ server_hostname }}"
+        owner: ansible
+        mode: 0600
+
+    - name: SSL | Generate crt
+      openssl_certificate:
+        path: "{{ crt_controller_dir }}/{{ crt_filename }}"
+        privatekey_path: "{{ crt_controller_dir }}/{{ privatekey_filename }}"
+        csr_path: "{{ crt_controller_dir }}/{{ csr_filename }}"
+        provider: selfsigned
+        owner: ansible
+        mode: 0600
+  when: generate_crt == true

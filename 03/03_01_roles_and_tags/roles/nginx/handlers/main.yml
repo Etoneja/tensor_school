@@ -1,0 +1,5 @@
+---
+- name: SYSTEMD | Restart Nginx
+  service:
+    name: nginx
+    state: restarted

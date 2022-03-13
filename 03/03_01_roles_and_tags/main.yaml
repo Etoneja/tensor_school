@@ -1,0 +1,56 @@
+---
+- name: Install and configure Nginx webserver with SSL termination and MariaDB
+  hosts: nodes
+  gather_facts: true
+  become: true
+
+  vars_files:
+    - vars.yaml
+
+  pre_tasks:
+    - name: PRE | Print vars
+      debug:
+        msg: "Server hostname: {{ server_hostname }}"
+      tags:
+        - crt
+        - nginx
+
+  roles:
+    - role: crt
+      delegate_to: localhost
+      run_once: true
+      tags:
+        - crt
+        - nginx
+    - role: nginx
+      tags:
+        - nginx
+    - role: mariadb
+      tags:
+        - mariadb
+
+  post_tasks:
+    - name: BLOCK | Check web site
+      block:
+        - name: HTTP | Check web site from control server | TLS
+          uri:
+            url: "https://{{ ansible_host }}:{{ nginx_port_tls }}"
+            return_content: true
+            validate_certs: false
+          connection: local
+          register: http_tls_check
+          failed_when: http_tls_check.status != 200
+          retries: 6
+          delay: 5
+
+        - name: HTTP | Check web site from control server | No TLS
+          uri:
+            url: "http://{{ ansible_host }}:{{ nginx_port_no_tls }}"
+            return_content: true
+            validate_certs: false
+          connection: local
+          register: http_not_tls_check
+          failed_when: http_not_tls_check.status != 200
+          retries: 6
+          delay: 5
+      tags: nginx

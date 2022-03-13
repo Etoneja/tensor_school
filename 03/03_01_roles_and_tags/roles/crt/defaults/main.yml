@@ -1,0 +1,8 @@
+---
+server_hostname: "example.com"
+crt_controller_dir: "/etc/ssl/certs/{{ server_hostname }}"
+privatekey_filename: "private_key.pem"
+csr_filename: "{{ server_hostname }}.csr"
+crt_filename: "fullchain.pem"
+controller_venv_path: "/home/ansible/venv/"
+generate_crt: false

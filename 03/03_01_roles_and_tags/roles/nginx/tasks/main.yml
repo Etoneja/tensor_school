@@ -1,0 +1,86 @@
+---
+- name: FIREWALLD | Enable ports
+  firewalld:
+    port: "{{ item }}/tcp"
+    permanent: true
+    state: enabled
+    immediate: true
+  ignore_errors: true
+  loop:
+    - "{{ nginx_port_no_tls }}"
+    - "{{ nginx_port_tls }}"
+
+- name: YUM | Setup Nginx repos
+  copy:
+    src: nginx.repo
+    dest: /etc/yum.repos.d/nginx.repo
+    owner: root
+    group: root
+    mode: 0600
+
+- name: YUM | Install Nginx
+  yum:
+    name: nginx
+    update_cache: true
+    state: present
+
+- name: SSL | Ensure compute crt dir exists
+  file:
+    path: "{{ crt_compute_dir }}"
+    state: directory
+
+- name: SSL | Copy crt and key from controller to compute
+  copy:
+    src: "{{ crt_controller_dir }}/{{ item }}"
+    dest: "{{ crt_compute_dir }}/{{ item }}"
+    owner: nginx
+    group: nginx
+    mode: 0600
+  loop:
+    - "{{ privatekey_filename }}"
+    - "{{ crt_filename }}"
+  notify: SYSTEMD | Restart Nginx
+
+- name: NGINX | Copy nginx.conf
+  copy:
+    src: files/nginx.conf
+    dest: /etc/nginx/nginx.conf
+    owner: nginx
+    group: nginx
+    mode: 0600
+  notify: SYSTEMD | Restart Nginx
+
+- name: NGINX | Remove default config
+  file:
+    state: absent
+    path: /etc/nginx/conf.d/default.conf
+  notify: SYSTEMD | Restart Nginx
+
+- name: NGINX | Copy host config
+  template:
+    src: templates/site.conf.j2
+    dest: "/etc/nginx/conf.d/{{ server_hostname }}.conf"
+    owner: nginx
+    group: nginx
+    mode: 0600
+  notify: SYSTEMD | Restart Nginx
+
+- name: NGINX | Ensure site dir exists
+  file:
+    path: "{{ site_dir }}"
+    state: directory
+
+- name: NGINX | Copy index.html
+  template:
+    src: templates/index.html.j2
+    dest: "{{ site_dir }}/index.html"
+    owner: nginx
+    group: nginx
+    mode: 0600
+  notify: SYSTEMD | Restart Nginx
+
+- name: SYSTEMD | Ensure Nginx is enabled and started
+  service:
+    name: nginx
+    state: started
+    enabled: true
