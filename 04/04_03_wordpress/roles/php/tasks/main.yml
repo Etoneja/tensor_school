@@ -1,0 +1,50 @@
+---
+- name: YUM | Setup EPEL repo
+  copy:
+    src: epel.repo
+    dest: /etc/yum.repos.d/epel.repo
+    owner: root
+    group: root
+    mode: 0600
+
+- name: YUM | Setup PHP repos
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/yum.repos.d/{{ item }}"
+    owner: root
+    group: root
+    mode: 0600
+  loop:
+    - remi-safe.repo
+    - remi-php74.repo
+
+- name: YUM | Install PHP packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ php_packages_list }}"
+
+- name: Remove default /etc/php-fpm.d/www.conf file
+  file:
+    state: absent
+    path: /etc/php-fpm.d/www.conf
+
+- name: Copy WordPress conf
+  copy:
+    src: wordpress.conf
+    dest: /etc/php-fpm.d/wordpress.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Ensure php-fpm is enabled and started
+  service:
+    name: php-fpm
+    state: started
+    enabled: true
+
+- name: Trigger php-frpm restart
+  debug:
+    msg: Trigger php-frpm restart
+  notify: Restart php-fpm
+  changed_when: true

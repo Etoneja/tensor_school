@@ -1,0 +1,13 @@
+nginx_port_no_tls: 80
+nginx_port_tls: 443
+server_hostname: "example.com"
+crt_controller_dir: "/etc/ssl/certs/{{ server_hostname }}"
+crt_compute_dir: "/etc/ssl/certs/{{ server_hostname }}"
+privatekey_filename: "private_key.pem"
+csr_filename: "{{ server_hostname }}.csr"
+crt_filename: "fullchain.pem"
+controller_venv_path: "/home/ansible/venv/"
+db_name: wordpress
+db_user: wordpress
+# note: don't use plain text passwords in non-test environments!
+db_password: wordpress

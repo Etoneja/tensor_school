@@ -1,0 +1,50 @@
+---
+- name: Example play
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    test_cases:
+      - addr: "www.ru"
+        tls: false
+      - addr: "ya.ru"
+  tasks:
+    - name: PY | Check and print
+      block:
+        - name: PY | Check web-addr status codes
+          healthcheck_py:
+            addr: "{{ test_case.addr }}"
+            tls: "{{ test_case.tls | default(true) }}"
+          register: healthcheck_py_result
+          loop: "{{ test_cases }}"
+          loop_control:
+            loop_var: test_case
+
+        - name: PY | Print healthcheck_py results
+          debug:
+            msg: >
+              {{ item.test_case.addr }}: result={{ item.result_str }},
+              rc={{ item.rc }}, msg={{ item.msg }}
+          loop: "{{ healthcheck_py_result.results }}"
+      tags:
+        - py
+
+    - name: SH | Check and print
+      block:
+        - name: SH | Check web-addr status codes
+          healthcheck_sh:
+            addr: "{{ test_case.addr }}"
+            tls: "{{ test_case.tls | default(true) }}"
+          register: healthcheck_sh_result
+          loop: "{{ test_cases }}"
+          loop_control:
+            loop_var: test_case
+
+        - name: SH | Print healthcheck_sh results
+          debug:
+            msg: >
+              {{ item.test_case.addr }}: result={{ item.result_str }},
+              rc={{ item.rc }}, msg={{ item.msg }}
+          loop: "{{ healthcheck_sh_result.results }}"
+      tags:
+        - sh

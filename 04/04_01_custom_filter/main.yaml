@@ -1,0 +1,20 @@
+---
+- name: Example play
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    test_cases:
+      - "482056876429"
+      - "48:20:56:87:64:29"
+      - "6b-17-4f-5B-fc-52"
+      - "fae3.fe59.3cb1"
+      - "[6e:4e:c1:b3:98:58]**"
+      - "74:37:52:bb:6e:9d    "
+  tasks:
+    - name: Normalize mac-addresses
+      debug:
+        msg: "Normalized MAC-address: {{ test_case | normalize_mac() }}"
+      loop: "{{ test_cases }}"
+      loop_control:
+        loop_var: test_case

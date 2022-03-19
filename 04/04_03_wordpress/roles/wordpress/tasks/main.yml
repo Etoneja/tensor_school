@@ -1,0 +1,51 @@
+---
+- name: Check WordPress is already downloaded
+  stat:
+    path: /srv/wordpress.tar.gz
+  register: wp_stat_result
+
+- name: Download WordPress
+  get_url:
+    url: "http://wordpress.org/wordpress-{{ wp_version }}.tar.gz"
+    dest: /srv/wordpress.tar.gz
+    checksum: "{{ wp_checksum }}"
+  when: not wp_stat_result.stat.exists
+
+- name: Unarchive WordPress
+  unarchive:
+    src: /srv/wordpress.tar.gz
+    dest: /srv
+    remote_src: true
+
+- name: Remove WordPress tar
+  file:
+    state: absent
+    path: /srv/wordpress.tar.gz
+
+- name: Copy WordPress config
+  template:
+    src: wp-config.php.j2
+    dest: /srv/wordpress/wp-config.php
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Add linux group "wordpress"
+  group:
+    name: wordpress
+    state: present
+
+- name: Add linux user "wordpress" with group "wordpress"
+  ansible.builtin.user:
+    name: wordpress
+    group: wordpress
+    home: /srv/wordpress
+
+- name: Set WordPress dir permissions
+  file:
+    recurse: true
+    path: /srv/wordpress
+    state: directory
+    owner: wordpress
+    group: wordpress
+    mode: 0750
