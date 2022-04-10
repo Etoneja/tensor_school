@@ -30,12 +30,12 @@ def _get_tags():
 
 def _get_metrics():
     metrics_data = [
-        ("total", str(_get_total_cpu_usage())),
+        ("py_total", str(_get_total_cpu_usage())),
     ]
 
     percore_cpu_usage = _get_percore_cpu_usage()
     for core_i, core_usage in percore_cpu_usage.items():
-        metrics_data.append((f"core{core_i}", str(core_usage)))
+        metrics_data.append((f"py_core{core_i}", str(core_usage)))
 
     metrics = ",".join("=".join(item) for item in metrics_data)
     return metrics
@@ -44,7 +44,7 @@ def _get_metrics():
 def _get_output():
     tags = _get_tags()
     metrics = _get_metrics()
-    timestamp = int(time.time())
+    timestamp = int(time.time() * (10 ** 9))
 
     output = f"{MEASUREMENT_NAME},{tags} {metrics} {timestamp}"
     return output

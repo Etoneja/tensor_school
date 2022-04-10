@@ -19,11 +19,11 @@ def _get_tags():
 def _get_mem_usage():
     virtual_memory = psutil.virtual_memory()
     mem_usage = {
-        "total": virtual_memory.total,
-        "available": virtual_memory.available,
-        "percent": virtual_memory.percent,
-        "used": virtual_memory.used,
-        "free": virtual_memory.free,
+        "py_total": virtual_memory.total,
+        "py_available": virtual_memory.available,
+        "py_percent": virtual_memory.percent,
+        "py_used": virtual_memory.used,
+        "py_free": virtual_memory.free,
     }
     return mem_usage
 
@@ -38,7 +38,7 @@ def _get_metrics():
 def _get_output():
     tags = _get_tags()
     metrics = _get_metrics()
-    timestamp = int(time.time())
+    timestamp = int(time.time() * (10 ** 9))
 
     output = f"{MEASUREMENT_NAME},{tags} {metrics} {timestamp}"
     return output
