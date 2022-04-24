@@ -1,0 +1,31 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: prometheus
+  template:
+    metadata:
+      labels:
+        name: prometheus
+    spec:
+      containers:
+      - image: prom/prometheus
+        args:
+        - --config.file=/etc/prometheus/prometheus.yaml
+        name: prometheus
+        ports:
+        - containerPort: 9090
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /etc/prometheus
+          name: prometheus-config-volume
+      volumes:
+      - name: prometheus-config-volume
+        configMap:
+          defaultMode: 420
+          name: prometheus-config
