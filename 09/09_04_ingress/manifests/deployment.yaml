@@ -1,0 +1,42 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  namespace: tensor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - image: python-app
+        name: python-app
+        envFrom:
+        - configMapRef:
+            name: configmap-env
+        env:
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: db_password
+        imagePullPolicy: Never
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/nginx/html
+      - image: nginx:1.12
+        name: nginx
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: data
+        emptyDir: {}
