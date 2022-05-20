@@ -1,0 +1,49 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.statefulset_mysql.name }}
+  {{- if .Values.namespace.enabled }}
+  namespace: {{ .Values.namespace.name }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.statefulset_mysql.name }}
+  serviceName: {{ .Values.statefulset_mysql.name }}
+  replicas: {{ .Values.statefulset_mysql.replicas }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.statefulset_mysql.name }}
+    spec:
+      containers:
+      - name: mysql
+        image: {{ .Values.statefulset_mysql.image }}:{{ .Values.statefulset_mysql.tag }}
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secret.name }}
+              key: db_password
+        ports:
+        - name: {{ .Values.statefulset_mysql.name }}
+          containerPort: {{ .Values.statefulset_mysql.port }}
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/mysql
+          subPath: mysql
+        - name: config
+          mountPath: /docker-entrypoint-initdb.d
+      volumes:
+      - name: config
+        configMap:
+          name: {{ .Values.configmap_init_mysql.name }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 200Mi

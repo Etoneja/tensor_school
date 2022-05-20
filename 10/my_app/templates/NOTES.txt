@@ -1,0 +1,7 @@
+1. Yo, DAWG:
+
+{{- if .Values.ingress.enabled }}
+  Go get your app via: {{ .Values.ingress.host }}
+{{- else }}
+  To access app you need enable ingress.
+{{- end }}

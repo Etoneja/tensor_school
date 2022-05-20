@@ -1,0 +1,40 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configmap.name }}
+  {{- if .Values.namespace.enabled }}
+  namespace: {{ .Values.namespace.name }}
+  {{- end }}
+data:
+  DB_HOST: {{ .Values.configmap.data.db.host }}
+  DB_USER: {{ .Values.configmap.data.db.user }}
+  DB_DATABASE: {{ .Values.configmap.data.db.database }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configmap_init_mysql.name }}
+  {{- if .Values.namespace.enabled }}
+  namespace: {{ .Values.namespace.name }}
+  {{- end }}
+data:
+  init.sql: |-
+    create database if not exists my_db;
+
+    use my_db;
+
+    create table if not exists articles (
+        id int unsigned not null AUTO_INCREMENT,
+        title varchar(255) not null,
+        text text not null,
+        primary key (id)
+    );
+
+    insert into articles (title, text)
+    values
+        ('title1', 'text1'),
+        ('title2', 'text2'),
+        ('title3', 'text3'),
+        ('title4', 'text4'),
+        ('title5', 'text5');

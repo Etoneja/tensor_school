@@ -1,0 +1,54 @@
+namespace:
+  enabled: true
+  name: tensor
+
+configmap:
+  name: my-configmap
+  data:
+    db:
+      host: mysql
+      user: root
+      database: my_db
+
+configmap_init_mysql:
+  name: init-mysql
+
+secret:
+  name: my-secret
+  data:
+    db:
+      password: password
+
+deployment:
+  name: my-deployment
+  replicas: 1
+  app:
+    name: python-app
+    image: python-app
+    tag: latest
+  nginx:
+    name: nginx
+    image: nginx
+    tag: 1.12
+    port: 80
+  data_path: /usr/share/nginx/html
+
+statefulset_mysql:
+  name: mysql
+  image: mysql
+  tag: 5.7
+  replicas: 1
+  port: 3306
+
+service_nginx:
+  name: nginx
+  port: 80
+
+service_mysql:
+  name: mysql
+  port: 3306
+
+ingress:
+  enabled: true
+  name: my-ingress
+  host: my-app.info

@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.name }}
+  {{- if .Values.namespace.enabled }}
+  namespace: {{ .Values.namespace.name }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.deployment.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.deployment.name }}
+    spec:
+      containers:
+      - image: {{ .Values.deployment.app.image }}:{{ .Values.deployment.app.tag }}
+        name: {{ .Values.deployment.app.name }}
+        envFrom:
+        - configMapRef:
+            name: {{ .Values.configmap.name }}
+        env:
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secret.name }}
+              key: db_password
+        imagePullPolicy: Never
+        volumeMounts:
+        - name: data
+          mountPath: {{ .Values.deployment.data_path }}
+      - image: {{ .Values.deployment.nginx.image }}:{{ .Values.deployment.nginx.tag }}
+        name: {{ .Values.deployment.nginx.name }}
+        ports:
+        - containerPort: {{ .Values.deployment.nginx.port }}
+        volumeMounts:
+        - name: data
+          mountPath: {{ .Values.deployment.data_path }}
+      volumes:
+      - name: data
+        emptyDir: {}
