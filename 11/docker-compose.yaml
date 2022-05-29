@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8888:8888"
+  service:
+    environment:
+      - TARGET_PORT=8888
+      - TARGET_HOST=backend
+    build: ./secService
